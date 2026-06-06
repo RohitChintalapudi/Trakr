@@ -72,8 +72,7 @@ router.get('/kpis', protect, async (req, res) => {
     res.json({
       activeWorkers: activeWorkers || salespersonIds.length,
       totalShops: uniqueShops.length || 6,
-      dailyCheckIns: dailyCheckIns || 0,
-      avgPitchTime: '18.4 mins'
+      dailyCheckIns: dailyCheckIns || 0
     });
   } catch (error) {
     console.error(error);

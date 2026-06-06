@@ -28,7 +28,8 @@ const ROLE_TABS = {
   SuperOfficial: [
     { id: 'performance', label: 'Territory Performance', icon: 'LayoutDashboard' },
     { id: 'leaderboard', label: 'Manager Leaderboard', icon: 'Users' },
-    { id: 'appoint', label: 'Appoint Branch Manager', icon: 'PlusCircle' }
+    { id: 'appoint', label: 'Appoint Branch Manager', icon: 'PlusCircle' },
+    { id: 'insights', label: 'Insight Engine', icon: 'Activity' }
   ],
   Manager: [
     { id: 'feed', label: 'Field Feed', icon: 'Clock' },

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import MockMap from '../components/MockMap';
-import { Line, Bar } from 'react-chartjs-2';
+import InsightCard from '../components/InsightCard';
+import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, Title, Tooltip, Legend 
+  LineElement, BarElement, ArcElement, Title, Tooltip, Legend 
 } from 'chart.js';
 import { 
   Award, ShieldAlert, RefreshCw, BarChart3, Users, 
@@ -108,6 +109,58 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
     { name: 'Sanjay Sharma', branch: 'Noida', visits: 32, target: 40, score: 80, status: 'Compliant' },
     { name: 'Amit Verma', branch: 'Gurgaon', visits: 18, target: 35, score: 51, status: 'Under Reporting' }
   ];
+
+  // Dynamic metrics calculations for Regional Insights Pie/Doughnut charts
+  const regionalSalesforce = subordinates.filter(sub => sub.role === 'Salesperson');
+  const spActive = regionalSalesforce.length > 0 ? regionalSalesforce.filter(sp => sp.status === 'Active').length : 8;
+  const spBreak = regionalSalesforce.length > 0 ? regionalSalesforce.filter(sp => sp.status === 'Break').length : 2;
+  const spOffline = regionalSalesforce.length > 0 ? regionalSalesforce.filter(sp => sp.status === 'Offline').length : 3;
+
+  const verifiedCheckins = checkIns.length > 0 ? checkIns.filter(ci => !ci.isAnomaly).length : 35;
+  const anomalyCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.isAnomaly).length : 5;
+
+  const statusPieData = {
+    labels: ['Active', 'On Break', 'Offline'],
+    datasets: [{
+      data: [spActive, spBreak, spOffline],
+      backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
+      borderWidth: 1,
+      borderColor: '#0f172a'
+    }]
+  };
+
+  const anomalyPieData = {
+    labels: ['Verified', 'Anomalies'],
+    datasets: [{
+      data: [verifiedCheckins, anomalyCheckins],
+      backgroundColor: ['#10b981', '#ef4444'],
+      borderWidth: 1,
+      borderColor: '#0f172a'
+    }]
+  };
+
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#cbd5e1',
+          boxWidth: 8,
+          padding: 8,
+          font: { size: 9 }
+        }
+      },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        titleColor: '#94a3b8',
+        bodyColor: '#f1f5f9',
+        borderColor: '#334155',
+        borderWidth: 1
+      }
+    }
+  };
 
   const fetchRegionalData = async () => {
     try {
@@ -259,7 +312,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
       {activeTab === 'performance' && (
         <>
           {/* Regional KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
               <div className="flex items-center justify-between text-emerald-500">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Regional Force</span>
@@ -286,15 +339,6 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
               <p className="text-3xl font-black text-slate-100 mt-2">{kpis?.dailyCheckIns}</p>
               <span className="text-[10px] text-green-400 font-semibold block mt-1">✓ Completed check-ins today</span>
             </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between text-purple-500">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Avg Vis Duration</span>
-                <Clock size={18} />
-              </div>
-              <p className="text-3xl font-black text-slate-100 mt-2">{kpis?.avgPitchTime}</p>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-1">Regional average time</span>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -318,117 +362,6 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
             </div>
           </div>
 
-          {/* Insights Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Received Insights from Branch Managers (2/3 width) */}
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col h-[400px]">
-              <h3 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
-                <Sparkles size={16} className="text-yellow-500" /> Received Insights from Branch Managers
-              </h3>
-              <p className="text-xs text-slate-500 mb-6">List of operational insights and branch performance summaries sent by managers reporting in your region.</p>
-
-              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-                {insights.map((insight) => (
-                  <div key={insight._id} className="p-4 bg-slate-950 border border-slate-850 rounded-xl hover:border-slate-700 transition-colors flex justify-between items-start gap-4">
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-200">{insight.senderId?.name}</span>
-                        <span className="text-[9px] bg-slate-900 border border-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded">
-                          Manager
-                        </span>
-                        <span className="text-[9px] text-slate-500 font-mono">
-                          {new Date(insight.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed font-medium">"{insight.content}"</p>
-                    </div>
-                    
-                    <div className="flex gap-2 text-center text-[10px]">
-                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
-                        <span className="text-slate-500 block text-[8px]">Visits</span>
-                        <span className="font-bold text-slate-300">{insight.metrics?.totalCheckIns || 0}</span>
-                      </div>
-                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
-                        <span className="text-slate-500 block text-[8px]">Active</span>
-                        <span className="font-bold text-slate-300">{insight.metrics?.activeSalespeople || 0}</span>
-                      </div>
-                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
-                        <span className="text-slate-500 block text-[8px]">Anomalies</span>
-                        <span className={`font-bold ${insight.metrics?.anomaliesCount > 0 ? 'text-red-400' : 'text-slate-300'}`}>
-                          {insight.metrics?.anomaliesCount || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {insights.length === 0 && (
-                  <p className="text-xs text-slate-500 text-center py-12 italic">No insights submitted by branch managers in your region yet.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Regional Insight Processor (1/3 width) */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between h-[400px]">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 bg-yellow-500/10 text-yellow-500 rounded">
-                    <Sparkles size={16} />
-                  </div>
-                  <h3 className="font-bold text-slate-200 text-sm">Regional Insight Processor</h3>
-                </div>
-                <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                  Compile and submit compiled regional territory metrics directly to the Corporate Owner as high-level operational insights.
-                </p>
-
-                <div className="space-y-4">
-                  <div className="p-3 bg-slate-950/60 border border-slate-850 rounded-lg space-y-2.5">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Region Aggregated Metrics</span>
-                    
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Check-Ins</span>
-                        <span className="font-black text-slate-200">{checkIns.length}</span>
-                      </div>
-                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Sales Force</span>
-                        <span className="font-black text-slate-200">{subordinates.filter(s => s.role === 'Salesperson').length}</span>
-                      </div>
-                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Managers</span>
-                        <span className="font-black text-slate-200">{subordinates.filter(s => s.role === 'Manager').length}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Generated Report Preview</label>
-                    <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-lg text-[11px] text-slate-400 italic leading-relaxed">
-                      "Regional Report for {user?.region || 'Assigned Zone'}: {checkIns.length} total check-ins, {subordinates.filter(s => s.role === 'Salesperson').length} active salespeople, and {subordinates.filter(s => s.role === 'Manager').length} branch managers reporting in our territory today."
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {sendingInsightMessage && (
-                  <div className={`p-2.5 rounded text-[10px] font-bold border text-center ${
-                    sendingInsightMessage.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-                  }`}>
-                    {sendingInsightMessage.text}
-                  </div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={handleSendRegionalInsights}
-                  disabled={sendingRegionalInsight}
-                  className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
-                >
-                  {sendingRegionalInsight ? 'Processing...' : 'Process & Send Insight to Owner'}
-                </button>
-              </div>
-            </div>
-          </div>
         </>
       )}
 
@@ -601,6 +534,150 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   Only alerts mapped strictly inside your assigned zone (e.g. North Zone) are visible here. South Zone geofence warnings are isolated to other Regional Heads.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGIONAL INSIGHT ENGINE */}
+      {activeTab === 'insights' && (
+        <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
+          <div className="w-full">
+            <InsightCard />
+          </div>
+
+          {/* Regional Pie Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[300px]">
+              <div>
+                <h4 className="font-bold text-slate-200 text-xs">Regional Field Force Activity</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Proportion of regional salespeople active, on break, or offline today.</p>
+              </div>
+              <div className="h-44 relative flex-1">
+                <Pie data={statusPieData} options={pieOptions} />
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[300px]">
+              <div>
+                <h4 className="font-bold text-slate-200 text-xs">Regional Alert Verification Share</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomalies inside your region.</p>
+              </div>
+              <div className="h-44 relative flex-1">
+                <Pie data={anomalyPieData} options={pieOptions} />
+              </div>
+            </div>
+          </div>
+
+          {/* Processed branch insights section with dynamic graphs & list */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Received Insights from Branch Managers (2/3 width) */}
+            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col h-[400px]">
+              <h3 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
+                <Sparkles size={16} className="text-yellow-500" /> Received Insights from Branch Managers
+              </h3>
+              <p className="text-xs text-slate-500 mb-6">List of operational insights and branch performance summaries sent by managers reporting in your region.</p>
+
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {insights.map((insight) => (
+                  <div key={insight._id} className="p-4 bg-slate-950 border border-slate-850 rounded-xl hover:border-slate-700 transition-colors flex justify-between items-start gap-4">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-200">{insight.senderId?.name}</span>
+                        <span className="text-[9px] bg-slate-900 border border-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded">
+                          Manager
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-mono">
+                          {new Date(insight.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed font-medium">"{insight.content}"</p>
+                    </div>
+                    
+                    <div className="flex gap-2 text-center text-[10px]">
+                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
+                        <span className="text-slate-500 block text-[8px]">Visits</span>
+                        <span className="font-bold text-slate-300">{insight.metrics?.totalCheckIns || 0}</span>
+                      </div>
+                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
+                        <span className="text-slate-500 block text-[8px]">Active</span>
+                        <span className="font-bold text-slate-300">{insight.metrics?.activeSalespeople || 0}</span>
+                      </div>
+                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
+                        <span className="text-slate-500 block text-[8px]">Anomalies</span>
+                        <span className={`font-bold ${insight.metrics?.anomaliesCount > 0 ? 'text-red-400' : 'text-slate-300'}`}>
+                          {insight.metrics?.anomaliesCount || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {insights.length === 0 && (
+                  <p className="text-xs text-slate-500 text-center py-12 italic">No insights submitted by branch managers in your region yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Regional Insight Processor (1/3 width) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between h-[400px]">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1.5 bg-yellow-500/10 text-yellow-500 rounded">
+                    <Sparkles size={16} />
+                  </div>
+                  <h3 className="font-bold text-slate-200 text-sm">Regional Insight Processor</h3>
+                </div>
+                <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                  Compile and submit compiled regional territory metrics directly to the Corporate Owner as high-level operational insights.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="p-3 bg-slate-950/60 border border-slate-850 rounded-lg space-y-2.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Region Aggregated Metrics</span>
+                    
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
+                        <span className="text-[9px] text-slate-500 block">Check-Ins</span>
+                        <span className="font-black text-slate-200">{checkIns.length}</span>
+                      </div>
+                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
+                        <span className="text-[9px] text-slate-500 block">Sales Force</span>
+                        <span className="font-black text-slate-200">{subordinates.filter(s => s.role === 'Salesperson').length}</span>
+                      </div>
+                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
+                        <span className="text-[9px] text-slate-500 block">Managers</span>
+                        <span className="font-black text-slate-200">{subordinates.filter(s => s.role === 'Manager').length}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Generated Report Preview</label>
+                    <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-lg text-[11px] text-slate-400 italic leading-relaxed">
+                      "Regional Report for {user?.region || 'Assigned Zone'}: {checkIns.length} total check-ins, {subordinates.filter(s => s.role === 'Salesperson').length} active salespeople, and {subordinates.filter(s => s.role === 'Manager').length} branch managers reporting in our territory today."
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {sendingInsightMessage && (
+                  <div className={`p-2.5 rounded text-[10px] font-bold border text-center ${
+                    sendingInsightMessage.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                  }`}>
+                    {sendingInsightMessage.text}
+                  </div>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={handleSendRegionalInsights}
+                  disabled={sendingRegionalInsight}
+                  className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {sendingRegionalInsight ? 'Processing...' : 'Process & Send Insight to Owner'}
+                </button>
               </div>
             </div>
           </div>

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import MockMap from '../components/MockMap';
 import InsightCard from '../components/InsightCard';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
-  LineElement, BarElement, Title, Tooltip, Legend 
+  LineElement, BarElement, ArcElement, Title, Tooltip, Legend 
 } from 'chart.js';
 import { 
   Users, Store, CheckSquare, Clock, TrendingUp, RefreshCw, 
@@ -217,6 +217,72 @@ const OwnerDashboard = ({ user, activeTab }) => {
   const managers = teamMembers.filter(m => m.role === 'Manager');
   const salespeople = teamMembers.filter(m => m.role === 'Salesperson');
 
+  // Dynamic metrics calculations for Insights Pie/Doughnut charts
+  const spActive = salespeople.length > 0 ? salespeople.filter(sp => sp.status === 'Active').length : 12;
+  const spBreak = salespeople.length > 0 ? salespeople.filter(sp => sp.status === 'Break').length : 3;
+  const spOffline = salespeople.length > 0 ? salespeople.filter(sp => sp.status === 'Offline').length : 5;
+
+  const verifiedCheckins = checkIns.length > 0 ? checkIns.filter(ci => !ci.isAnomaly).length : 85;
+  const anomalyCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.isAnomaly).length : 15;
+
+  const northCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'North Zone').length : 42;
+  const southCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'South Zone').length : 28;
+  const eastCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'East Zone').length : 15;
+  const westCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'West Zone').length : 10;
+
+  const statusPieData = {
+    labels: ['Active', 'On Break', 'Offline'],
+    datasets: [{
+      data: [spActive, spBreak, spOffline],
+      backgroundColor: ['#10b981', '#f59e0b', '#64748b'],
+      borderWidth: 1,
+      borderColor: '#0f172a'
+    }]
+  };
+
+  const anomalyPieData = {
+    labels: ['Verified', 'Anomalies'],
+    datasets: [{
+      data: [verifiedCheckins, anomalyCheckins],
+      backgroundColor: ['#3b82f6', '#ef4444'],
+      borderWidth: 1,
+      borderColor: '#0f172a'
+    }]
+  };
+
+  const regionalDoughnutData = {
+    labels: ['North Zone', 'South Zone', 'East Zone', 'West Zone'],
+    datasets: [{
+      data: [northCheckins, southCheckins, eastCheckins, westCheckins],
+      backgroundColor: ['#2563eb', '#0d9488', '#8b5cf6', '#f43f5e'],
+      borderWidth: 1,
+      borderColor: '#0f172a'
+    }]
+  };
+
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#cbd5e1',
+          boxWidth: 8,
+          padding: 8,
+          font: { size: 9 }
+        }
+      },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        titleColor: '#94a3b8',
+        bodyColor: '#f1f5f9',
+        borderColor: '#334155',
+        borderWidth: 1
+      }
+    }
+  };
+
   const memberInsights = (selectedMember?.role === 'Manager' || selectedMember?.role === 'SuperOfficial')
     ? insights.filter(
         (insight) => (insight.senderId?._id?.toString() || insight.senderId?.toString()) === selectedMember._id?.toString()
@@ -243,7 +309,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
       {activeTab === 'kpis' && (
         <>
           {/* Macro KPI Matrix */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
               <div className="flex items-center justify-between text-blue-500">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Field Force</span>
@@ -269,15 +335,6 @@ const OwnerDashboard = ({ user, activeTab }) => {
               </div>
               <p className="text-3xl font-black text-slate-100 mt-2">{kpis?.dailyCheckIns}</p>
               <span className="text-[10px] text-green-400 font-semibold block mt-1">✓ Completed check-ins today</span>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between text-purple-500">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Avg Pitch Duration</span>
-                <Clock size={18} />
-              </div>
-              <p className="text-3xl font-black text-slate-100 mt-2">{kpis?.avgPitchTime}</p>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-1">Site timeline average</span>
             </div>
           </div>
 
@@ -500,6 +557,39 @@ const OwnerDashboard = ({ user, activeTab }) => {
         <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto w-full">
           <div className="w-full">
             <InsightCard />
+          </div>
+
+          {/* Real-time Insight Analytics Pie & Doughnut charts */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[320px]">
+              <div>
+                <h4 className="font-bold text-slate-200 text-xs">Field Force Activity</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Proportion of salespeople active, on break, or offline today.</p>
+              </div>
+              <div className="h-44 relative flex-1">
+                <Pie data={statusPieData} options={pieOptions} />
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[320px]">
+              <div>
+                <h4 className="font-bold text-slate-200 text-xs">Alert Verification Share</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomaly alerts.</p>
+              </div>
+              <div className="h-44 relative flex-1">
+                <Pie data={anomalyPieData} options={pieOptions} />
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[320px]">
+              <div>
+                <h4 className="font-bold text-slate-200 text-xs">Regional Visit Share</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Percentage breakdown of completed check-ins by geographic territory.</p>
+              </div>
+              <div className="h-44 relative flex-1">
+                <Doughnut data={regionalDoughnutData} options={pieOptions} />
+              </div>
+            </div>
           </div>
 
           {/* Processed branch insights section with dynamic graphs & list */}
