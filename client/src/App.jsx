@@ -10,6 +10,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import SuperOfficialDashboard from './pages/SuperOfficialDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SalespersonDashboard from './pages/SalespersonDashboard';
+import LogsPage from './pages/LogsPage';
 
 // Define navigation tabs per role
 const ROLE_TABS = {
@@ -21,6 +22,7 @@ const ROLE_TABS = {
   Owner: [
     { id: 'kpis', label: 'Macro KPIs', icon: 'TrendingUp' },
     { id: 'map', label: 'Global Activity Map', icon: 'Map' },
+    { id: 'logs', label: 'Visit Logs', icon: 'ClipboardList' },
     { id: 'explorer', label: 'Org Tree Explorer', icon: 'LayoutDashboard' },
     { id: 'appoint', label: 'Appoint Regional Head', icon: 'PlusCircle' },
     { id: 'insights', label: 'Insight Engine', icon: 'Activity' }
@@ -28,12 +30,14 @@ const ROLE_TABS = {
   SuperOfficial: [
     { id: 'performance', label: 'Territory Performance', icon: 'LayoutDashboard' },
     { id: 'leaderboard', label: 'Manager Leaderboard', icon: 'Users' },
+    { id: 'logs', label: 'Visit Logs', icon: 'ClipboardList' },
     { id: 'appoint', label: 'Appoint Branch Manager', icon: 'PlusCircle' },
     { id: 'insights', label: 'Insight Engine', icon: 'Activity' }
   ],
   Manager: [
     { id: 'feed', label: 'Field Feed', icon: 'Clock' },
     { id: 'attendance', label: 'Attendance Ticker', icon: 'Activity' },
+    { id: 'logs', label: 'Visit Logs', icon: 'ClipboardList' },
     { id: 'anomalies', label: 'Anomaly Center', icon: 'AlertTriangle' },
     { id: 'appoint', label: 'Appoint Sales Force', icon: 'PlusCircle' }
   ],
@@ -66,10 +70,10 @@ function App() {
     // Determine target mock email based on role
     const mockEmails = {
       Admin: 'admin@trakr.com',
-      Owner: 'owner@horlicks.com',
-      SuperOfficial: 'ramesh@horlicks.com',
-      Manager: 'vikram@horlicks.com',
-      Salesperson: 'raj@horlicks.com'
+      Owner: 'owner@nighatech.com',
+      SuperOfficial: 'ramesh@nighatech.com',
+      Manager: 'vikram@nighatech.com',
+      Salesperson: 'raj@nighatech.com'
     };
 
     const email = mockEmails[newRole];
@@ -122,10 +126,13 @@ function App() {
       case 'Admin':
         return <AdminDashboard activeTab={activeTab} />;
       case 'Owner':
+        if (activeTab === 'logs') return <LogsPage user={user} />;
         return <OwnerDashboard user={user} activeTab={activeTab} />;
       case 'SuperOfficial':
+        if (activeTab === 'logs') return <LogsPage user={user} />;
         return <SuperOfficialDashboard user={user} activeTab={activeTab} />;
       case 'Manager':
+        if (activeTab === 'logs') return <LogsPage user={user} />;
         return <ManagerDashboard user={user} activeTab={activeTab} />;
       case 'Salesperson':
         return <SalespersonDashboard user={user} activeTab={activeTab} />;

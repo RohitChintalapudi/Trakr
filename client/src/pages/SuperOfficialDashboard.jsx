@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import MockMap from '../components/MockMap';
+import LiveMap from '../components/LiveMap';
 import InsightCard from '../components/InsightCard';
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, ArcElement, Title, Tooltip, Legend 
+  LineElement, BarElement, ArcElement, Filler, Title, Tooltip, Legend 
 } from 'chart.js';
 import { 
   Award, ShieldAlert, RefreshCw, BarChart3, Users, 
@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, Title, Tooltip, Legend
+  LineElement, BarElement, ArcElement, Filler, Title, Tooltip, Legend
 );
 
 const SuperOfficialDashboard = ({ user, activeTab }) => {
@@ -187,8 +187,10 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
   useEffect(() => {
     fetchRegionalData();
 
-    // Auto-poll datasets every 10 seconds for real-time responsiveness
+    // Auto-poll every 30s — only while token exists
     const interval = setInterval(() => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
       Promise.all([
         api.get('/analytics/kpis'),
         api.get('/analytics/chart-data'),
@@ -201,8 +203,8 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
         setCheckIns(checkinRes.data);
         setSubordinates(teamRes.data);
         setInsights(insightRes.data.list || []);
-      }).catch(err => console.error('Error polling regional datasets:', err));
-    }, 10000);
+      }).catch(() => {}); // silently ignore — 401s expected on session expiry
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -264,7 +266,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         tension: 0.3,
-        fill: true
+        fill: 'origin'
       }
     ]
   };
@@ -344,7 +346,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Map isolated strictly to this Super Official's region */}
             <div className="lg:col-span-2">
-              <MockMap checkIns={checkIns} />
+              <LiveMap checkIns={checkIns} />
             </div>
 
             {/* Regional Line Chart */}
@@ -555,7 +557,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
                 <p className="text-[10px] text-slate-500 mb-4">Proportion of regional salespeople active, on break, or offline today.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie data={statusPieData} options={pieOptions} />
+                <Pie key={`status-${spActive}-${spBreak}-${spOffline}`} data={statusPieData} options={pieOptions} />
               </div>
             </div>
 
@@ -565,7 +567,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
                 <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomalies inside your region.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie data={anomalyPieData} options={pieOptions} />
+                <Pie key={`anomaly-${verifiedCheckins}-${anomalyCheckins}`} data={anomalyPieData} options={pieOptions} />
               </div>
             </div>
           </div>

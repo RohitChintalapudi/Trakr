@@ -125,11 +125,21 @@ const SalespersonDashboard = () => {
       setSubmitting(true);
       setFormMsg({ text: '', isError: false });
 
-      await api.post('/checkin', {
-        shopName,
-        summary,
-        imageUrl: mockImgUrl,
-        coordinates
+      const formData = new FormData();
+      formData.append('shopName', shopName);
+      formData.append('summary', summary);
+      formData.append('coordinates', JSON.stringify(coordinates));
+
+      if (imageFile) {
+        formData.append('image', imageFile);
+      } else {
+        formData.append('imageUrl', mockImgUrl);
+      }
+
+      await api.post('/checkin', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       setFormMsg({ text: 'Check-in submitted successfully!', isError: false });

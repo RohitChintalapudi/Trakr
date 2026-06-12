@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import MockMap from '../components/MockMap';
+import LiveMap from '../components/LiveMap';
 import InsightCard from '../components/InsightCard';
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
-  LineElement, BarElement, ArcElement, Title, Tooltip, Legend 
+  LineElement, BarElement, ArcElement, Filler, Title, Tooltip, Legend 
 } from 'chart.js';
 import { 
   Users, Store, CheckSquare, Clock, TrendingUp, RefreshCw, 
@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, 
-  LineElement, BarElement, Title, Tooltip, Legend
+  LineElement, BarElement, ArcElement, Filler, Title, Tooltip, Legend
 );
 
 const OwnerDashboard = ({ user, activeTab }) => {
@@ -105,8 +105,10 @@ const OwnerDashboard = ({ user, activeTab }) => {
   useEffect(() => {
     fetchOwnerData();
 
-    // Auto-poll datasets every 10 seconds for real-time responsiveness
+    // Auto-poll every 30s — only while token exists
     const interval = setInterval(() => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
       Promise.all([
         api.get('/analytics/kpis'),
         api.get('/analytics/chart-data'),
@@ -119,8 +121,8 @@ const OwnerDashboard = ({ user, activeTab }) => {
         setCheckIns(checkinRes.data);
         setTeamMembers(teamRes.data);
         setInsights(insightRes.data.list || []);
-      }).catch(err => console.error('Error polling Owner datasets:', err));
-    }, 10000);
+      }).catch(() => {}); // silently ignore — 401s expected on session expiry
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -157,7 +159,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.3,
-        fill: true
+        fill: 'origin'
       }
     ]
   };
@@ -362,7 +364,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
       {/* MAP SECTION */}
       {activeTab === 'map' && (
         <div className="w-full">
-          <MockMap checkIns={checkIns} />
+          <LiveMap checkIns={checkIns} />
         </div>
       )}
 
@@ -567,7 +569,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
                 <p className="text-[10px] text-slate-500 mb-4">Proportion of salespeople active, on break, or offline today.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie data={statusPieData} options={pieOptions} />
+                <Pie key={`status-${spActive}-${spBreak}-${spOffline}`} data={statusPieData} options={pieOptions} />
               </div>
             </div>
 
@@ -577,7 +579,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
                 <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomaly alerts.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie data={anomalyPieData} options={pieOptions} />
+                <Pie key={`anomaly-${verifiedCheckins}-${anomalyCheckins}`} data={anomalyPieData} options={pieOptions} />
               </div>
             </div>
 
@@ -587,7 +589,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
                 <p className="text-[10px] text-slate-500 mb-4">Percentage breakdown of completed check-ins by geographic territory.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Doughnut data={regionalDoughnutData} options={pieOptions} />
+                <Doughnut key={`regional-${northCheckins}-${southCheckins}-${eastCheckins}`} data={regionalDoughnutData} options={pieOptions} />
               </div>
             </div>
           </div>

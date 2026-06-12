@@ -21,6 +21,21 @@ api.interceptors.request.use(
   }
 );
 
+// Automatically clear token and redirect to login if server responds with 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const setAuthToken = (token) => {
   if (token) {
     localStorage.setItem('token', token);

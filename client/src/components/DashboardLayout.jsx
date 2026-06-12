@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Users, PlusCircle, Shield, TrendingUp, Map, Activity, 
-  LayoutDashboard, Clock, AlertTriangle, Briefcase, LogOut 
+  LayoutDashboard, Clock, AlertTriangle, Briefcase, LogOut, ClipboardList 
 } from 'lucide-react';
 import { logoutUser } from '../utils/api';
 
@@ -23,6 +23,7 @@ const DashboardLayout = ({ user, activeTab, setActiveTab, tabs, children, onSwit
       case 'Clock': return <Clock size={20} />;
       case 'AlertTriangle': return <AlertTriangle size={20} />;
       case 'Briefcase': return <Briefcase size={20} />;
+      case 'ClipboardList': return <ClipboardList size={20} />;
       default: return <Activity size={20} />;
     }
   };

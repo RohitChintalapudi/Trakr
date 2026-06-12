@@ -116,11 +116,13 @@ const ManagerDashboard = ({ user, activeTab }) => {
   useEffect(() => {
     fetchManagerData();
 
-    // Auto-poll the feeds every 10 seconds for real-time responsiveness
+    // Auto-poll every 30s — only while token exists
     const interval = setInterval(() => {
-      api.get('/checkin/team').then(res => setFeed(res.data));
-      api.get('/attendance/team').then(res => setTicker(res.data));
-    }, 10000);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      api.get('/checkin/team').then(res => setFeed(res.data)).catch(() => {});
+      api.get('/attendance/team').then(res => setTicker(res.data)).catch(() => {});
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -168,7 +170,12 @@ const ManagerDashboard = ({ user, activeTab }) => {
                   >
                     <div className="flex gap-3">
                       <div className="w-12 h-12 rounded overflow-hidden bg-slate-900 border border-slate-800 flex-shrink-0">
-                        <img src={checkin.imageUrl} alt={checkin.shopName} className="w-full h-full object-cover" />
+                        {checkin.imageBase64
+                          ? <img src={`data:image/png;base64,${checkin.imageBase64}`} alt={checkin.shopName} className="w-full h-full object-cover" />
+                          : checkin.imageUrl
+                            ? <img src={checkin.imageUrl} alt={checkin.shopName} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">📷</div>
+                        }
                       </div>
                       
                       <div className="min-w-0 flex-1">
@@ -495,7 +502,12 @@ const ManagerDashboard = ({ user, activeTab }) => {
 
             {/* Check-In Image */}
             <div className="w-full h-56 bg-slate-950 rounded-xl overflow-hidden border border-slate-850">
-              <img src={selectedCheckIn.imageUrl} alt={selectedCheckIn.shopName} className="w-full h-full object-cover" />
+              {selectedCheckIn.imageBase64
+                ? <img src={`data:image/png;base64,${selectedCheckIn.imageBase64}`} alt={selectedCheckIn.shopName} className="w-full h-full object-cover" />
+                : selectedCheckIn.imageUrl
+                  ? <img src={selectedCheckIn.imageUrl} alt={selectedCheckIn.shopName} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">No photo available</div>
+              }
             </div>
 
             {/* Metrics Details */}
