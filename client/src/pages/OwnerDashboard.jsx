@@ -224,8 +224,9 @@ const OwnerDashboard = ({ user, activeTab }) => {
   const spBreak = salespeople.length > 0 ? salespeople.filter(sp => sp.status === 'Break').length : 3;
   const spOffline = salespeople.length > 0 ? salespeople.filter(sp => sp.status === 'Offline').length : 5;
 
-  const verifiedCheckins = checkIns.length > 0 ? checkIns.filter(ci => !ci.isAnomaly).length : 85;
-  const anomalyCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.isAnomaly).length : 15;
+  const outcomeSale = checkIns.filter(ci => ci.outcome === 'Sale').length;
+  const outcomeFollowUp = checkIns.filter(ci => ci.outcome === 'Follow-up').length;
+  const outcomeOther = checkIns.filter(ci => ci.outcome !== 'Sale' && ci.outcome !== 'Follow-up').length;
 
   const northCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'North Zone').length : 42;
   const southCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.region === 'South Zone').length : 28;
@@ -242,11 +243,15 @@ const OwnerDashboard = ({ user, activeTab }) => {
     }]
   };
 
-  const anomalyPieData = {
-    labels: ['Verified', 'Anomalies'],
+  const outcomePieData = {
+    labels: ['Sales Completed', 'Follow-Ups', 'Standard Visits'],
     datasets: [{
-      data: [verifiedCheckins, anomalyCheckins],
-      backgroundColor: ['#3b82f6', '#ef4444'],
+      data: [
+        checkIns.length > 0 ? outcomeSale : 42,
+        checkIns.length > 0 ? outcomeFollowUp : 28,
+        checkIns.length > 0 ? outcomeOther : 15
+      ],
+      backgroundColor: ['#10b981', '#3b82f6', '#64748b'],
       borderWidth: 1,
       borderColor: '#0f172a'
     }]
@@ -450,109 +455,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
         </div>
       )}
 
-      {/* HIERARCHICAL EXPLORER SECTION */}
-      {activeTab === 'explorer' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-4xl mx-auto w-full">
-          <h3 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
-            <Network size={18} className="text-blue-500" /> Hierarchical Tree Explorer
-          </h3>
-          <p className="text-xs text-slate-500 mb-6">Collapsible org-chart maps showing Super Officials, Branch Managers, and field salespeople.</p>
 
-          <div className="space-y-4 border-l border-slate-850 pl-4 mt-6">
-            {/* Top Node: Owner */}
-            <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center gap-3 w-fit mb-4">
-              <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold">👑</div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-200">{user?.name || 'Corporate Owner'} (Apex)</h4>
-                <p className="text-[10px] text-slate-500">{user?.name ? `${user.name} Group` : 'Corporate Global Administrator'}</p>
-              </div>
-            </div>
-
-            {/* Sub-tier tree recursive expansion */}
-            {superOfficials.map((so) => {
-              const soExpanded = expandedNodes[so._id];
-              const soManagers = managers.filter(m => m.parentId === so._id);
-              
-              return (
-                <div key={so._id} className="space-y-3 pl-4 relative">
-                  <div className="absolute -left-4 top-4 w-4 h-0.5 bg-slate-800"></div>
-                  
-                  {/* Super Official Card */}
-                  <div className="flex items-center gap-2.5">
-                    <button 
-                      onClick={() => handleToggleNode(so._id)}
-                      className="p-1 text-slate-500 hover:text-slate-200 transition-colors"
-                    >
-                      {soExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                    </button>
-                    
-                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-3 min-w-[280px]">
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-slate-200 truncate">{so.name}</h4>
-                        <span className="text-[9px] bg-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
-                          Regional Head ({so.region})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expand Managers */}
-                  {soExpanded && soManagers.map((mgr) => {
-                    const mgrExpanded = expandedNodes[mgr._id];
-                    const mgrSales = salespeople.filter(s => s.parentId === mgr._id);
-
-                    return (
-                      <div key={mgr._id} className="pl-12 space-y-3 relative">
-                        <div className="absolute -left-8 top-4 w-8 h-0.5 bg-slate-800"></div>
-                        <div className="absolute -left-8 top-4 bottom-4 w-0.5 bg-slate-800"></div>
-
-                        {/* Manager Card */}
-                        <div className="flex items-center gap-2.5">
-                          <button 
-                            onClick={() => handleToggleNode(mgr._id)}
-                            className="p-1 text-slate-500 hover:text-slate-200 transition-colors"
-                          >
-                            {mgrExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                          </button>
-                          
-                          <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center gap-3 min-w-[280px]">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-slate-200 truncate">{mgr.name}</h4>
-                              <span className="text-[9px] text-slate-500 font-semibold block">Branch Manager</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Expand Salespeople */}
-                        {mgrExpanded && mgrSales.map((sp) => (
-                          <div key={sp._id} className="pl-12 relative">
-                            <div className="absolute -left-8 top-4.5 w-8 h-0.5 bg-slate-800"></div>
-                            <div className="absolute -left-8 top-0 bottom-4 w-0.5 bg-slate-800"></div>
-
-                            {/* Salesperson click trigger standalone metrics details */}
-                            <button
-                              onClick={() => handleViewMemberDetails(sp)}
-                              className="p-3 bg-slate-950 hover:bg-slate-800 border border-slate-850 hover:border-slate-700 text-left rounded-xl flex items-center gap-3 min-w-[280px] transition-colors cursor-pointer group"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:scale-125 transition-transform"></div>
-                              <div className="min-w-0">
-                                <h4 className="text-xs font-bold text-slate-300 group-hover:text-blue-400 transition-colors truncate">{sp.name}</h4>
-                                <p className="text-[9px] text-slate-500">Sales Field Force ({sp.status})</p>
-                              </div>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ALL MEMBERS DIRECTORY & INSIGHTS */}
       {activeTab === 'insights' && (
@@ -575,11 +478,11 @@ const OwnerDashboard = ({ user, activeTab }) => {
 
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[320px]">
               <div>
-                <h4 className="font-bold text-slate-200 text-xs">Alert Verification Share</h4>
-                <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomaly alerts.</p>
+                <h4 className="font-bold text-slate-200 text-xs">Visit Outcomes</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Distribution of check-in outcomes (Sales, Follow-ups, etc.).</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie key={`anomaly-${verifiedCheckins}-${anomalyCheckins}`} data={anomalyPieData} options={pieOptions} />
+                <Pie key={`outcome-${outcomeSale}-${outcomeFollowUp}`} data={outcomePieData} options={pieOptions} />
               </div>
             </div>
 
@@ -633,12 +536,6 @@ const OwnerDashboard = ({ user, activeTab }) => {
                         <span className="text-slate-500 block text-[8px]">Active</span>
                         <span className="font-bold text-slate-300">{insight.metrics?.activeSalespeople || 0}</span>
                       </div>
-                      <div className="px-2 py-0.5 bg-slate-900 border border-slate-850 rounded">
-                        <span className="text-slate-500 block text-[8px]">Anom</span>
-                        <span className={`font-bold ${insight.metrics?.anomaliesCount > 0 ? 'text-red-400' : 'text-slate-300'}`}>
-                          {insight.metrics?.anomaliesCount || 0}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -652,7 +549,7 @@ const OwnerDashboard = ({ user, activeTab }) => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between h-[400px]">
               <div>
                 <h3 className="font-bold text-slate-200 mb-2">Branch Metrics Comparison</h3>
-                <p className="text-xs text-slate-500 mb-6">Comparative analysis of total check-ins vs anomalies across active branches.</p>
+                <p className="text-xs text-slate-500 mb-6">Comparative analysis of total check-ins vs active salespeople across branches.</p>
               </div>
 
               <div className="h-64 relative flex-1">
@@ -667,9 +564,9 @@ const OwnerDashboard = ({ user, activeTab }) => {
                         borderRadius: 6
                       },
                       {
-                        label: 'Anomalies',
-                        data: insights.length > 0 ? insights.map(i => i.metrics?.anomaliesCount || 0) : [1, 2, 0],
-                        backgroundColor: '#ef4444',
+                        label: 'Active Force',
+                        data: insights.length > 0 ? insights.map(i => i.metrics?.activeSalespeople || 0) : [3, 2, 4],
+                        backgroundColor: '#10b981',
                         borderRadius: 6
                       }
                     ]

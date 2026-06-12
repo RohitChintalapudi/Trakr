@@ -25,26 +25,7 @@ const normalIcon = L.divIcon({
   popupAnchor: [0, -8],
 });
 
-// Custom icon for anomaly check-ins (red pulsing ring)
-const anomalyIcon = L.divIcon({
-  className: '',
-  html: `<div style="position:relative;width:18px;height:18px;">
-    <div style="
-      position:absolute;inset:0;border-radius:50%;
-      background:#ef4444;opacity:0.3;
-      animation:ping 1.4s cubic-bezier(0,0,.2,1) infinite;
-    "></div>
-    <div style="
-      position:absolute;inset:2px;border-radius:50%;
-      background:#ef4444;border:2px solid white;
-      box-shadow:0 2px 6px rgba(239,68,68,0.7);
-    "></div>
-  </div>
-  <style>@keyframes ping{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.2);opacity:0}}</style>`,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-  popupAnchor: [0, -10],
-});
+
 
 // Auto-fit map bounds to all check-in markers
 const AutoFitBounds = ({ checkIns }) => {
@@ -120,11 +101,7 @@ const LiveMap = ({ checkIns = [] }) => {
         <div className="flex items-center gap-4 text-[10px] font-semibold text-slate-400">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
-            <span>Check-in</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse"></span>
-            <span>Anomaly</span>
+            <span>Sales Representative Check-In</span>
           </div>
         </div>
       </div>
@@ -160,24 +137,17 @@ const LiveMap = ({ checkIns = [] }) => {
               ? `<div style="
                   position: relative;
                   width: 38px; height: 38px; border-radius: 50%;
-                  border: 2px solid ${pin.isAnomaly ? '#ef4444' : '#3b82f6'};
+                  border: 2px solid #3b82f6;
                   box-shadow: 0 3px 8px rgba(0,0,0,0.5);
                   overflow: hidden; background: #0f172a;
                   display: flex; align-items: center; justify-content: center;
                 ">
                   <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" />
-                </div>
-                ${pin.isAnomaly ? `
-                <div style="
-                  position: absolute; top: -1px; right: -1px;
-                  width: 11px; height: 11px; border-radius: 50%;
-                  background: #ef4444; border: 1.5px solid white;
-                  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-                "></div>` : ''}`
+                </div>`
               : `<div style="
                   position: relative;
                   width: 16px; height: 16px; border-radius: 50%;
-                  background: ${pin.isAnomaly ? '#ef4444' : '#3b82f6'};
+                  background: #3b82f6;
                   border: 2px solid white;
                   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
                 "></div>`;
@@ -234,18 +204,9 @@ const LiveMap = ({ checkIns = [] }) => {
                       </div>
                     )}
 
-                    {/* Shop name + anomaly badge */}
+                    {/* Shop name */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                       <span style={{ fontWeight: 700, fontSize: 13 }}>{pin.shopName}</span>
-                      {pin.isAnomaly && (
-                        <span style={{
-                          padding: '1px 6px', background: 'rgba(239,68,68,0.1)',
-                          border: '1px solid rgba(239,68,68,0.3)', borderRadius: 999,
-                          fontSize: 9, color: '#f87171', fontWeight: 700,
-                        }}>
-                          ⚠ ANOMALY
-                        </span>
-                      )}
                     </div>
 
                     <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0' }}>
@@ -270,11 +231,6 @@ const LiveMap = ({ checkIns = [] }) => {
                         month: 'short', day: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                       })}</span>
-                      {pin.isAnomaly && (
-                        <span style={{ color: '#f87171', fontWeight: 700 }}>
-                          +{pin.distance}m deviation
-                        </span>
-                      )}
                     </div>
                   </div>
                 </Popup>

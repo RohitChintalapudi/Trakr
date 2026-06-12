@@ -197,12 +197,12 @@ const LandingPage = ({ onLogin }) => {
             </div>
 
             <div className="p-6 bg-slate-900/30 border border-slate-850 hover:border-slate-700/60 rounded-2xl space-y-4 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                <ShieldAlert size={20} />
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                <Activity size={20} />
               </div>
-              <h3 className="font-bold text-slate-200 text-sm">Anomaly Center</h3>
+              <h3 className="font-bold text-slate-200 text-sm">Live Activity Feed</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Real-time incident feed flags distance anomalies, unauthorized check-ins, or off-site reporting in real time.
+                Real-time check-in updates track outlet visits, salesperson logs, and field reports immediately as they happen.
               </p>
             </div>
           </div>
@@ -324,7 +324,7 @@ const LandingPage = ({ onLogin }) => {
                   <li className="flex items-center gap-2 text-slate-300">✓ Unlimited active agents</li>
                   <li className="flex items-center gap-2 text-slate-300">✓ Multi-Region Data Isolation</li>
                   <li className="flex items-center gap-2 text-slate-300">✓ GPS Deviation / Geofencing</li>
-                  <li className="flex items-center gap-2 text-slate-300">✓ Real-time Anomaly Feed</li>
+                  <li className="flex items-center gap-2 text-slate-300">✓ Real-time Activity Feed</li>
                   <li className="flex items-center gap-2 text-slate-300">✓ API integration credentials</li>
                 </ul>
               </div>

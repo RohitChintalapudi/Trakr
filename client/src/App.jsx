@@ -23,7 +23,6 @@ const ROLE_TABS = {
     { id: 'kpis', label: 'Macro KPIs', icon: 'TrendingUp' },
     { id: 'map', label: 'Global Activity Map', icon: 'Map' },
     { id: 'logs', label: 'Visit Logs', icon: 'ClipboardList' },
-    { id: 'explorer', label: 'Org Tree Explorer', icon: 'LayoutDashboard' },
     { id: 'appoint', label: 'Appoint Regional Head', icon: 'PlusCircle' },
     { id: 'insights', label: 'Insight Engine', icon: 'Activity' }
   ],
@@ -38,7 +37,6 @@ const ROLE_TABS = {
     { id: 'feed', label: 'Field Feed', icon: 'Clock' },
     { id: 'attendance', label: 'Attendance Ticker', icon: 'Activity' },
     { id: 'logs', label: 'Visit Logs', icon: 'ClipboardList' },
-    { id: 'anomalies', label: 'Anomaly Center', icon: 'AlertTriangle' },
     { id: 'appoint', label: 'Appoint Sales Force', icon: 'PlusCircle' }
   ],
   Salesperson: [

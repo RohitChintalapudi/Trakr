@@ -15,16 +15,15 @@ const ManagerDashboard = ({ user, activeTab }) => {
     setInsightMessage(null);
     try {
       const activeCount = ticker.filter((w) => w.status === 'Active').length;
-      const anomalyCount = feed.filter((item) => item.isAnomaly).length;
       
-      const content = `Branch Report for ${user?.region || 'Local Territory'}: ${feed.length} check-ins, ${activeCount} active salespeople, and ${anomalyCount} geofence anomalies detected today.`;
+      const content = `Branch Report for ${user?.region || 'Local Territory'}: ${feed.length} check-ins and ${activeCount} active salespeople today.`;
       
       await api.post('/analytics/insights', {
         content,
         metrics: {
           totalCheckIns: feed.length,
           activeSalespeople: activeCount,
-          anomaliesCount: anomalyCount
+          anomaliesCount: 0
         }
       });
       setInsightMessage({
@@ -230,28 +229,22 @@ const ManagerDashboard = ({ user, activeTab }) => {
                   <div className="p-3 bg-slate-950/60 border border-slate-850 rounded-lg space-y-2.5">
                     <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Today's Aggregated Metrics</span>
                     
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="grid grid-cols-2 gap-2 text-center text-xs">
                       <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Check-Ins</span>
+                        <span className="text-[9px] text-slate-500 block">Check-Ins Completed</span>
                         <span className="font-black text-slate-200">{feed.length}</span>
                       </div>
                       <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Active Force</span>
+                        <span className="text-[9px] text-slate-500 block">Active Field Force</span>
                         <span className="font-black text-slate-200">{ticker.filter(w => w.status === 'Active').length}</span>
-                      </div>
-                      <div className="p-2 bg-slate-900/40 rounded border border-slate-850">
-                        <span className="text-[9px] text-slate-500 block">Anomalies</span>
-                        <span className={`font-black ${feed.filter(ci => ci.isAnomaly).length > 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                          {feed.filter(ci => ci.isAnomaly).length}
-                        </span>
                       </div>
                     </div>
                   </div>
- 
+
                   <div className="space-y-1">
                     <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Generated Report Preview</label>
                     <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-lg text-[11px] text-slate-400 italic leading-relaxed">
-                      "Branch Report for {user?.region || 'Local Territory'}: {feed.length} check-ins, {ticker.filter(w => w.status === 'Active').length} active salespeople, and {feed.filter(item => item.isAnomaly).length} geofence anomalies detected today."
+                      "Branch Report for {user?.region || 'Local Territory'}: {feed.length} check-ins and {ticker.filter(w => w.status === 'Active').length} active salespeople today."
                     </div>
                   </div>
                 </div>
@@ -331,73 +324,7 @@ const ManagerDashboard = ({ user, activeTab }) => {
           </div>
         )}
 
-        {/* Anomaly Alert Center */}
-        {activeTab === 'anomalies' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-2xl mx-auto w-full flex flex-col">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-bold text-slate-200">Anomaly Alert Center</h3>
-              {anomalies.length > 0 && (
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mb-6">Visual geofence displacement warnings from check-ins matching distance anomalies.</p>
 
-            <div className="space-y-3.5 max-h-[480px] overflow-y-auto pr-1">
-              {anomalies.map((alert) => (
-                <div 
-                  key={alert._id}
-                  className="p-4 bg-red-950/10 border border-red-500/20 rounded-xl flex items-start gap-3 relative hover:border-red-500/40 transition-colors"
-                >
-                  <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div>
-                      <h4 className="text-xs font-bold text-red-400 truncate">{alert.shopName}</h4>
-                      <p className="text-[10px] text-slate-300 mt-0.5">
-                        Agent <span className="font-semibold text-slate-200">{alert.salespersonId?.name}</span> checked in outside boundaries.
-                      </p>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[9px] text-slate-500 border-t border-red-950/20 pt-1.5">
-                      <span className="font-bold text-red-500">+{alert.distance}m deviation</span>
-                      <span>{new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-
-                    {/* Manager Accept / Reject Actions */}
-                    {alert.anomalyStatus === 'Pending' || !alert.anomalyStatus ? (
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateAnomaly(alert._id, 'Accepted')}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-[10px] font-bold text-white rounded transition-colors cursor-pointer"
-                        >
-                          Accept Anomaly
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateAnomaly(alert._id, 'Rejected')}
-                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-[10px] font-bold text-white rounded transition-colors cursor-pointer"
-                        >
-                          Reject Anomaly
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="pt-1 text-[10px] font-bold">
-                        Decision: <span className={alert.anomalyStatus === 'Accepted' ? 'text-emerald-400' : 'text-rose-400'}>
-                          {alert.anomalyStatus}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {anomalies.length === 0 && (
-                <div className="p-4 bg-slate-950/50 rounded-lg border border-slate-850 text-center py-6 text-xs text-slate-500">
-                  ✓ No active GPS geofence breaches detected.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* APPOINT SALES FORCE SECTION */}
         {activeTab === 'appoint' && (
@@ -512,17 +439,10 @@ const ManagerDashboard = ({ user, activeTab }) => {
 
             {/* Metrics Details */}
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3 bg-slate-950/50 rounded-lg border border-slate-850">
+              <div className="p-3 bg-slate-950/50 rounded-lg border border-slate-850 col-span-2">
                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Timestamp</span>
                 <span className="font-semibold text-slate-300 mt-1 block">
                   {new Date(selectedCheckIn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(selectedCheckIn.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
-              </div>
-
-              <div className="p-3 bg-slate-950/50 rounded-lg border border-slate-850">
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Geofence Status</span>
-                <span className={`font-bold mt-1 block ${selectedCheckIn.isAnomaly ? 'text-red-400' : 'text-green-400'}`}>
-                  {selectedCheckIn.isAnomaly ? `Anomaly (+${selectedCheckIn.distance}m)` : `Verified (+${selectedCheckIn.distance}m)`}
                 </span>
               </div>
 
@@ -533,39 +453,6 @@ const ManagerDashboard = ({ user, activeTab }) => {
                 </span>
               </div>
             </div>
-
-            {/* Anomaly Decision Bar */}
-            {selectedCheckIn.isAnomaly && (
-              <div className="p-3 bg-slate-950/50 rounded-lg border border-slate-850 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Anomaly Audit Status</span>
-                  <span className={`font-bold mt-1 block ${
-                    selectedCheckIn.anomalyStatus === 'Accepted' ? 'text-green-400' : 
-                    selectedCheckIn.anomalyStatus === 'Rejected' ? 'text-red-400' : 'text-yellow-500'
-                  }`}>
-                    {selectedCheckIn.anomalyStatus || 'Pending'}
-                  </span>
-                </div>
-                {(selectedCheckIn.anomalyStatus === 'Pending' || !selectedCheckIn.anomalyStatus) && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateAnomaly(selectedCheckIn._id, 'Accepted')}
-                      className="px-2.5 py-1 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded transition-colors cursor-pointer"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateAnomaly(selectedCheckIn._id, 'Rejected')}
-                      className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold rounded transition-colors cursor-pointer"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Notes */}
             <div className="space-y-1.5">

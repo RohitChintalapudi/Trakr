@@ -116,8 +116,9 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
   const spBreak = regionalSalesforce.length > 0 ? regionalSalesforce.filter(sp => sp.status === 'Break').length : 2;
   const spOffline = regionalSalesforce.length > 0 ? regionalSalesforce.filter(sp => sp.status === 'Offline').length : 3;
 
-  const verifiedCheckins = checkIns.length > 0 ? checkIns.filter(ci => !ci.isAnomaly).length : 35;
-  const anomalyCheckins = checkIns.length > 0 ? checkIns.filter(ci => ci.isAnomaly).length : 5;
+  const outcomeSale = checkIns.filter(ci => ci.outcome === 'Sale').length;
+  const outcomeFollowUp = checkIns.filter(ci => ci.outcome === 'Follow-up').length;
+  const outcomeOther = checkIns.filter(ci => ci.outcome !== 'Sale' && ci.outcome !== 'Follow-up').length;
 
   const statusPieData = {
     labels: ['Active', 'On Break', 'Offline'],
@@ -129,11 +130,15 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
     }]
   };
 
-  const anomalyPieData = {
-    labels: ['Verified', 'Anomalies'],
+  const outcomePieData = {
+    labels: ['Sales Completed', 'Follow-Ups', 'Standard Visits'],
     datasets: [{
-      data: [verifiedCheckins, anomalyCheckins],
-      backgroundColor: ['#10b981', '#ef4444'],
+      data: [
+        checkIns.length > 0 ? outcomeSale : 35,
+        checkIns.length > 0 ? outcomeFollowUp : 25,
+        checkIns.length > 0 ? outcomeOther : 10
+      ],
+      backgroundColor: ['#10b981', '#3b82f6', '#64748b'],
       borderWidth: 1,
       borderColor: '#0f172a'
     }]
@@ -221,16 +226,12 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
     try {
       const salespersonCount = subordinates.filter(s => s.role === 'Salesperson').length;
       const managerCount = subordinates.filter(s => s.role === 'Manager').length;
-      const anomalyCount = checkIns.filter(ci => ci.isAnomaly).length;
-      
-      const content = `Regional Report for ${user?.region || 'Assigned Zone'}: ${checkIns.length} total check-ins, ${salespersonCount} active salespeople, and ${managerCount} branch managers reporting in our territory today.`;
-      
       await api.post('/analytics/insights', {
-        content,
+        content: `Regional Report for ${user?.region || 'Assigned Zone'}: ${checkIns.length} total check-ins, ${salespersonCount} active salespeople, and ${managerCount} branch managers reporting in our territory today.`,
         metrics: {
           totalCheckIns: checkIns.length,
           activeSalespeople: salespersonCount,
-          anomaliesCount: anomalyCount
+          anomaliesCount: 0
         }
       });
       setSendingInsightMessage({
@@ -563,11 +564,11 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
 
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[300px]">
               <div>
-                <h4 className="font-bold text-slate-200 text-xs">Regional Alert Verification Share</h4>
-                <p className="text-[10px] text-slate-500 mb-4">Verified field check-ins vs out-of-bounds anomalies inside your region.</p>
+                <h4 className="font-bold text-slate-200 text-xs">Regional Visit Outcomes</h4>
+                <p className="text-[10px] text-slate-500 mb-4">Distribution of check-in outcomes (Sales, Follow-ups, etc.) in your region.</p>
               </div>
               <div className="h-44 relative flex-1">
-                <Pie key={`anomaly-${verifiedCheckins}-${anomalyCheckins}`} data={anomalyPieData} options={pieOptions} />
+                <Pie key={`outcome-${outcomeSale}-${outcomeFollowUp}`} data={outcomePieData} options={pieOptions} />
               </div>
             </div>
           </div>
@@ -606,12 +607,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
                         <span className="text-slate-500 block text-[8px]">Active</span>
                         <span className="font-bold text-slate-300">{insight.metrics?.activeSalespeople || 0}</span>
                       </div>
-                      <div className="px-2 py-1 bg-slate-900 border border-slate-850 rounded">
-                        <span className="text-slate-500 block text-[8px]">Anomalies</span>
-                        <span className={`font-bold ${insight.metrics?.anomaliesCount > 0 ? 'text-red-400' : 'text-slate-300'}`}>
-                          {insight.metrics?.anomaliesCount || 0}
-                        </span>
-                      </div>
+
                     </div>
                   </div>
                 ))}
@@ -852,11 +848,7 @@ const SuperOfficialDashboard = ({ user, activeTab }) => {
                         <span className="text-[9px] text-slate-500">
                           {new Date(ci.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        {ci.isAnomaly ? (
-                          <span className="text-[9px] text-red-500 font-bold block">Anomaly (+{ci.distance}m)</span>
-                        ) : (
-                          <span className="text-[9px] text-green-400 font-bold block">Verified</span>
-                        )}
+                        <span className="text-[9px] text-slate-400 font-semibold block">{ci.outcome || 'Visit'}</span>
                       </div>
                     </div>
                   ))}

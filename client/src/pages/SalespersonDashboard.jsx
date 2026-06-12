@@ -14,10 +14,10 @@ const SalespersonDashboard = () => {
   const [imageFile, setImageFile] = useState(null);
   const [mockImgUrl, setMockImgUrl] = useState('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80');
   
-  // Coordinate Presets (For testing normal vs anomaly check-ins easily)
+  // Coordinate Presets (For testing various check-in locations easily)
   // Target coordinates for Reliance Fresh are: [77.2090, 28.6139]
   const [coordType, setCoordType] = useState('Normal'); 
-  const [coordinates, setCoordinates] = useState([77.2092, 28.6141]); // ~25m away (normal)
+  const [coordinates, setCoordinates] = useState([77.2092, 28.6141]); // ~25m away (primary location)
 
   const [formMsg, setFormMsg] = useState({ text: '', isError: false });
   const [loading, setLoading] = useState(true);
@@ -76,9 +76,9 @@ const SalespersonDashboard = () => {
   const handleCoordPresetChange = (preset) => {
     setCoordType(preset);
     if (preset === 'Normal') {
-      setCoordinates([77.2092, 28.6141]); // 25 meters (normal)
+      setCoordinates([77.2092, 28.6141]); // 25 meters (primary)
     } else {
-      setCoordinates([77.2200, 28.6250]); // 1.7 km away (anomaly)
+      setCoordinates([77.2200, 28.6250]); // 1.7 km away (secondary)
     }
   };
 
@@ -325,12 +325,12 @@ const SalespersonDashboard = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCoordPresetChange('Anomaly')}
+                  onClick={() => handleCoordPresetChange('Secondary')}
                   className={`py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                    coordType === 'Anomaly' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-slate-950 text-slate-500'
+                    coordType === 'Secondary' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'bg-slate-950 text-slate-500'
                   }`}
                 >
-                  Anomaly Preset (1.7km Away)
+                  Secondary Location (1.7km Away)
                 </button>
               </div>
 
@@ -415,11 +415,7 @@ const SalespersonDashboard = () => {
                   <span className="text-[9px] text-slate-500 font-medium block">
                     {new Date(ci.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  {ci.isAnomaly ? (
-                    <span className="text-[9px] text-red-400 font-bold text-right block">Anomaly (+{ci.distance}m)</span>
-                  ) : (
-                    <span className="text-[9px] text-green-400 font-bold text-right block">Verified CP</span>
-                  )}
+                  <span className="text-[9px] text-slate-400 font-semibold text-right block">{ci.outcome || 'Visit'}</span>
                 </div>
               </div>
             ))}

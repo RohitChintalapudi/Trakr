@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import {
   Search, Filter, ChevronDown, ChevronUp, Image as ImageIcon,
@@ -84,12 +84,12 @@ const LogsPage = ({ user }) => {
 
   const handleExport = () => {
     const rows = [
-      ['Timestamp','Salesperson','Shop','Address','Region','Outcome','Anomaly','Distance(m)','Summary'],
+      ['Timestamp','Salesperson','Shop','Address','Region','Outcome','Latitude','Longitude','Summary'],
       ...processed.map(l => [
         new Date(l.timestamp).toLocaleString(),
         l.salespersonId?.name||'', l.shopName||'', l.address||'',
-        l.region||'', l.outcome||'', l.isAnomaly?'Yes':'No',
-        l.distance||'', (l.summary||l.notes||'').replace(/,/g,' ')
+        l.region||'', l.outcome||'', l.location?.coordinates?.[1]||'',
+        l.location?.coordinates?.[0]||'', (l.summary||l.notes||'').replace(/,/g,' ')
       ])
     ];
     const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'});
@@ -130,20 +130,10 @@ const LogsPage = ({ user }) => {
           </select>
           <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"/>
         </div>
-        <div className="relative">
-          <Filter size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"/>
-          <select value={filterAnomaly} onChange={e=>setFilterAnomaly(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg pl-7 pr-7 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-700 appearance-none cursor-pointer">
-            <option value="all">All Status</option>
-            <option value="clean">Verified Only</option>
-            <option value="anomaly">Anomalies Only</option>
-          </select>
-          <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"/>
-        </div>
         <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}
           className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-700" />
-        {(search||filterEmployee!=='all'||filterAnomaly!=='all'||filterDate) && (
-          <button onClick={()=>{setSearch('');setFilterEmployee('all');setFilterAnomaly('all');setFilterDate('');}}
+        {(search||filterEmployee!=='all'||filterDate) && (
+          <button onClick={()=>{setSearch('');setFilterEmployee('all');setFilterDate('');}}
             className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"><X size={11}/> Clear</button>
         )}
       </div>
@@ -161,7 +151,7 @@ const LogsPage = ({ user }) => {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-800 bg-slate-950/60">
-                  <th className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider w-14">Photo</th>
+                  <th className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider w-24">Photo & Geotag</th>
                   {[['timestamp','Time'],['salesperson','Employee'],['shopName','Shop']].map(([f,l])=>(
                     <th key={f} className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider cursor-pointer hover:text-slate-300 select-none" onClick={()=>handleSort(f)}>
                       <span className="flex items-center">{l}<SortIcon field={f}/></span>
@@ -169,7 +159,6 @@ const LogsPage = ({ user }) => {
                   ))}
                   <th className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider">Region</th>
                   <th className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider">Outcome</th>
-                  <th className="text-left px-4 py-3 text-slate-500 font-semibold uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 w-8"></th>
                 </tr>
               </thead>
@@ -183,14 +172,21 @@ const LogsPage = ({ user }) => {
                       <tr className={`border-b border-slate-800/60 hover:bg-slate-800/30 transition-colors cursor-pointer ${isSelected?'bg-slate-800/50':''}`}
                         onClick={()=>setSelectedLog(isSelected?null:log)}>
                         <td className="px-4 py-3">
-                          {src?(
-                            <button onClick={e=>{e.stopPropagation();setPhotoModal(src);}}
-                              className="w-10 h-10 rounded-lg overflow-hidden border border-slate-700 hover:border-blue-500 transition-colors block">
-                              <img src={src} alt="visit" className="w-full h-full object-cover"/>
-                            </button>
-                          ):(
-                            <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-600"><ImageIcon size={14}/></div>
-                          )}
+                          <div className="flex flex-col items-center gap-1 py-1">
+                            {src?(
+                              <button onClick={e=>{e.stopPropagation();setPhotoModal(src);}}
+                                className="w-12 h-12 rounded-lg overflow-hidden border border-slate-700 hover:border-blue-500 transition-colors block">
+                                <img src={src} alt="visit" className="w-full h-full object-cover"/>
+                              </button>
+                            ):(
+                              <div className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-600"><ImageIcon size={14}/></div>
+                            )}
+                            {log.location?.coordinates && (
+                              <span className="text-[9px] text-slate-400 font-mono tracking-tight whitespace-nowrap bg-slate-950 px-1 py-0.5 rounded border border-slate-850">
+                                {log.location.coordinates[1].toFixed(5)}, {log.location.coordinates[0].toFixed(5)}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
                           <div className="font-medium text-slate-300">{new Date(log.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
@@ -213,13 +209,6 @@ const LogsPage = ({ user }) => {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {log.isAnomaly?(
-                            <span className="flex items-center gap-1 text-red-400 text-[10px] font-semibold"><AlertTriangle size={10}/>Anomaly{log.distance?<span className="text-red-600">+{log.distance}m</span>:null}</span>
-                          ):(
-                            <span className="flex items-center gap-1 text-emerald-400 text-[10px] font-semibold"><CheckCircle size={10}/>Verified</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
                           <button onClick={e=>{e.stopPropagation();setSelectedLog(isSelected?null:log);}} className="text-slate-500 hover:text-blue-400 transition-colors">
                             {isSelected?<ChevronUp size={14}/>:<ChevronDown size={14}/>}
                           </button>
@@ -227,7 +216,7 @@ const LogsPage = ({ user }) => {
                       </tr>
                       {isSelected&&(
                         <tr className="bg-slate-800/20 border-b border-slate-800">
-                          <td colSpan={8} className="px-5 py-5">
+                          <td colSpan={7} className="px-5 py-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                               <div className="w-full h-52 bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
                                 {photoSrc(log)?(
@@ -238,9 +227,8 @@ const LogsPage = ({ user }) => {
                               </div>
                               <div className="grid grid-cols-2 gap-2 text-xs content-start">
                                 {[
-                                  ['Contact',log.contactName],['Products',Array.isArray(log.products)?log.products.join(', '):log.products],
-                                  ['Alert Status',log.anomalyStatus],['Distance Deviation',log.distance?`${log.distance}m`:null],
-                                  ['Lat',log.location?.coordinates?.[1]?.toFixed(6)],['Lng',log.location?.coordinates?.[0]?.toFixed(6)],
+                                  ['Contact Name',log.contactName],['Products Pitch',Array.isArray(log.products)?log.products.join(', '):log.products],
+                                  ['Latitude',log.location?.coordinates?.[1]?.toFixed(6)],['Longitude',log.location?.coordinates?.[0]?.toFixed(6)],
                                 ].map(([k,v])=>(
                                   <div key={k} className="bg-slate-950/50 rounded-lg p-2.5 border border-slate-800">
                                     <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">{k}</span>
