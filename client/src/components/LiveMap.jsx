@@ -31,6 +31,9 @@ const normalIcon = L.divIcon({
 const AutoFitBounds = ({ checkIns }) => {
   const map = useMap();
   useEffect(() => {
+    // Force Leaflet to recalculate size (important when switching dashboard tabs)
+    map.invalidateSize();
+
     if (!checkIns || checkIns.length === 0) return;
     const coords = checkIns
       .filter(c => c.location?.coordinates?.length === 2)
@@ -109,6 +112,7 @@ const LiveMap = ({ checkIns = [] }) => {
       {/* Map container */}
       <div className="flex-1 relative" style={{ minHeight: 400 }}>
         <MapContainer
+          key={checkIns.length}
           center={defaultCenter}
           zoom={11}
           style={{ width: '100%', height: '100%', minHeight: 400 }}
