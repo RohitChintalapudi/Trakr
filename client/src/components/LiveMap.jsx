@@ -56,39 +56,50 @@ const LiveMap = ({ checkIns = [] }) => {
   );
 
   // Group and offset overlapping check-in coordinates (spiderfy style)
-  const coordCounts = {};
+  const clusters = [];
+  const threshold = 0.00025; // ~25 meters threshold in degrees
+
   validCheckIns.forEach(c => {
     const [lon, lat] = c.location.coordinates;
-    const key = `${lat.toFixed(5)}_${lon.toFixed(5)}`;
-    coordCounts[key] = (coordCounts[key] || 0) + 1;
+    let foundCluster = false;
+    for (const cluster of clusters) {
+      const first = cluster[0];
+      const [flon, flat] = first.location.coordinates;
+      const dist = Math.sqrt(Math.pow(lat - flat, 2) + Math.pow(lon - flon, 2));
+      if (dist < threshold) {
+        cluster.push(c);
+        foundCluster = true;
+        break;
+      }
+    }
+    if (!foundCluster) {
+      clusters.push([c]);
+    }
   });
 
-  const coordIndices = {};
-  const displayCheckIns = validCheckIns.map(c => {
-    const [lon, lat] = c.location.coordinates;
-    const key = `${lat.toFixed(5)}_${lon.toFixed(5)}`;
-    const count = coordCounts[key];
-
-    let offsetLat = lat;
-    let offsetLon = lon;
-
-    if (count > 1) {
-      const index = coordIndices[key] || 0;
-      coordIndices[key] = index + 1;
-
-      // Spread markers by ~25 meters radially
-      const radius = 0.00022;
-      const angle = (2 * Math.PI * index) / count;
-
-      offsetLat = lat + radius * Math.sin(angle);
-      const latRad = (lat * Math.PI) / 180;
-      offsetLon = lon + (radius * Math.cos(angle)) / Math.max(0.1, Math.cos(latRad));
+  const displayCheckIns = [];
+  clusters.forEach(cluster => {
+    const count = cluster.length;
+    if (count === 1) {
+      displayCheckIns.push({
+        ...cluster[0],
+        displayCoordinates: [...cluster[0].location.coordinates]
+      });
+    } else {
+      const first = cluster[0];
+      const [flon, flat] = first.location.coordinates;
+      cluster.forEach((c, index) => {
+        const angle = (2 * Math.PI * index) / count;
+        const radius = 0.00025 + (count > 4 ? 0.00005 * (count - 4) : 0);
+        const offsetLat = flat + radius * Math.sin(angle);
+        const latRad = (flat * Math.PI) / 180;
+        const offsetLon = flon + (radius * Math.cos(angle)) / Math.max(0.1, Math.cos(latRad));
+        displayCheckIns.push({
+          ...c,
+          displayCoordinates: [offsetLon, offsetLat]
+        });
+      });
     }
-
-    return {
-      ...c,
-      displayCoordinates: [offsetLon, offsetLat]
-    };
   });
 
   return (

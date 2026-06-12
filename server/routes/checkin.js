@@ -346,4 +346,45 @@ router.patch('/:id/anomaly', protect, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/checkin/{id}:
+ *   delete:
+ *     summary: Delete a check-in log (Owner only)
+ *     tags: [CheckIn]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Check-in log successfully deleted
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Check-in not found
+ */
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    if (req.user.role !== 'Owner') {
+      return res.status(403).json({ message: 'Access denied: Only the owner can delete check-ins' });
+    }
+
+    const checkin = await CheckIn.findById(req.params.id);
+    if (!checkin) {
+      return res.status(404).json({ message: 'Check-in not found' });
+    }
+
+    await CheckIn.deleteOne({ _id: req.params.id });
+    res.json({ message: 'Check-in log successfully deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

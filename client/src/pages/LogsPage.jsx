@@ -3,7 +3,7 @@ import api from '../utils/api';
 import {
   Search, Filter, ChevronDown, ChevronUp, Image as ImageIcon,
   MapPin, AlertTriangle, CheckCircle, Clock, User, X,
-  ArrowUpDown, Download, RefreshCw
+  ArrowUpDown, Download, RefreshCw, Trash2
 } from 'lucide-react';
 
 const LogsPage = ({ user }) => {
@@ -37,6 +37,20 @@ const LogsPage = ({ user }) => {
   const handleSort = (field) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDir('desc'); }
+  };
+
+  const handleDeleteLog = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this visit log? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await api.delete(`/checkin/${id}`);
+      setSelectedLog(null);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Error deleting log');
+    }
   };
 
   const derivedEmployees = useMemo(() => {
@@ -241,6 +255,16 @@ const LogsPage = ({ user }) => {
                               <div className="mt-3 bg-slate-950/50 rounded-lg p-3 border border-slate-800">
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Summary</span>
                                 <p className="text-slate-300 text-xs leading-relaxed">"{log.summary||log.notes}"</p>
+                              </div>
+                            )}
+                            {user?.role === 'Owner' && (
+                              <div className="mt-4 flex justify-end">
+                                <button
+                                  onClick={() => handleDeleteLog(log._id)}
+                                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-400 hover:text-red-350 bg-red-950/30 hover:bg-red-950/50 border border-red-900/65 rounded-lg transition-all"
+                                >
+                                  <Trash2 size={12} /> Delete Visit Log
+                                </button>
                               </div>
                             )}
                           </td>
